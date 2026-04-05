@@ -53,9 +53,9 @@ watch(expiresAt, (val) => {
   if (!val) return
   tgTimer = setInterval(() => {
     const diff = Math.max(0, Math.floor((new Date(val).getTime() - Date.now()) / 1000))
-    const m = Math.floor(diff / 60)
-    const s = diff % 60
-    tgCountdown.value = `${m}:${String(s).padStart(2, '0')}`
+    const h = Math.floor(diff / 3600)
+    const m = Math.floor((diff % 3600) / 60)
+    tgCountdown.value = h > 0 ? `${h}h ${m}m` : `${m}m`
     if (diff === 0) clearInterval(tgTimer!)
   }, 1000)
 })

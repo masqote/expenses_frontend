@@ -2,7 +2,7 @@ export default defineNuxtConfig({
   ssr: false,
   runtimeConfig: {
     public: {
-      apiBase: process.env.NUXT_PUBLIC_API_BASE ?? 'http://192.168.100.15:8000/api',
+      apiBase: process.env.NUXT_PUBLIC_API_BASE ?? 'https://expenses-production-09b3.up.railway.app/api',
     },
   },
   app: {

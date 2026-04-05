@@ -3,14 +3,13 @@ definePageMeta({ layout: 'default', middleware: 'auth' })
 
 const { expenses, fetchExpenses, updateExpense, deleteExpense } = useExpenses()
 const { fetchSummary } = useSummary()
-const period = ref(new Date().toISOString().slice(0, 7))
+const { fromDate, toDate, setRange } = useDateRange()
 const showAddForm = ref(false)
 
 const loadAll = async () => {
-  await Promise.all([fetchExpenses(period.value), fetchSummary(period.value)])
+  await Promise.all([fetchExpenses(fromDate.value, toDate.value), fetchSummary(fromDate.value, toDate.value)])
 }
 
-watch(period, loadAll)
 onMounted(loadAll)
 
 const onSubmitted = () => { showAddForm.value = false; loadAll() }
@@ -25,6 +24,23 @@ const totalExpenses = computed(() =>
   expenses.value.reduce((sum, e) => sum + parseFloat(e.amount as any), 0)
 )
 const fmt = (n: number) => `Rp ${n.toLocaleString('id-ID')}`
+
+// ── Category filter ──
+const selectedCategoryFilter = ref<number | null>(null)
+
+const usedCategories = computed(() => {
+  const seen = new Map()
+  expenses.value.forEach(e => {
+    if (e.category && !seen.has(e.category.id)) seen.set(e.category.id, e.category)
+  })
+  return Array.from(seen.values())
+})
+
+const filteredExpenses = computed(() =>
+  selectedCategoryFilter.value === null
+    ? expenses.value
+    : expenses.value.filter(e => e.category?.id === selectedCategoryFilter.value)
+)
 </script>
 
 <template>
@@ -40,7 +56,7 @@ const fmt = (n: number) => `Rp ${n.toLocaleString('id-ID')}`
           <p class="text-rose-200 text-sm font-medium">Total Spent</p>
           <h1 class="text-2xl sm:text-4xl font-bold text-white mt-1 tracking-tight truncate">{{ fmt(totalExpenses) }}</h1>
         </div>
-        <PeriodNavigator v-model="period" dark />
+        <DateRangeFilter :from="fromDate" :to="toDate" dark @change="(f, t) => { setRange(f, t); loadAll() }" />
       </div>
 
       <!-- Count cards — single line -->
@@ -75,26 +91,46 @@ const fmt = (n: number) => `Rp ${n.toLocaleString('id-ID')}`
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
           Add Expense
         </button>
-        <AddExpenseForm v-else :period="period" @submitted="onSubmitted" @cancel="showAddForm = false" />
+        <AddExpenseForm v-else :period="toDate" @submitted="onSubmitted" @cancel="showAddForm = false" />
+      </div>
+
+      <!-- Category filter -->
+      <div v-if="usedCategories.length > 0" class="bg-[#1a1825] rounded-2xl border border-white/5 p-4">
+        <div class="flex flex-wrap gap-2">
+          <button
+            @click="selectedCategoryFilter = null"
+            :class="selectedCategoryFilter === null ? 'bg-violet-600 text-white' : 'bg-white/5 text-gray-400 hover:text-white'"
+            class="px-3 py-1.5 rounded-xl text-xs font-medium transition"
+          >All</button>
+          <button
+            v-for="cat in usedCategories"
+            :key="cat.id"
+            @click="selectedCategoryFilter = selectedCategoryFilter === cat.id ? null : cat.id"
+            :class="selectedCategoryFilter === cat.id ? 'bg-violet-600 text-white' : 'bg-white/5 text-gray-400 hover:text-white'"
+            class="px-3 py-1.5 rounded-xl text-xs font-medium transition flex items-center gap-1"
+          >
+            <span v-if="cat.icon">{{ cat.icon }}</span>{{ cat.name }}
+          </button>
+        </div>
       </div>
 
       <!-- Expense list -->
       <div class="bg-[#1a1825] rounded-2xl border border-white/5 overflow-hidden">
         <div class="px-5 py-4 flex items-center justify-between border-b border-white/5">
           <h2 class="text-white font-semibold">Expenses</h2>
-          <span class="text-gray-500 text-xs">{{ expenses.length }} items</span>
+          <span class="text-gray-500 text-xs">{{ filteredExpenses.length }} items</span>
         </div>
 
-        <div v-if="expenses.length === 0" class="px-5 py-12 text-center">
+        <div v-if="filteredExpenses.length === 0" class="px-5 py-12 text-center">
           <div class="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-3">
             <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
           </div>
-          <p class="text-gray-500 text-sm">No expenses yet</p>
-          <button @click="showAddForm = true" class="mt-3 text-xs text-violet-400 hover:text-violet-300 transition">+ Add your first expense</button>
+          <p class="text-gray-500 text-sm">{{ selectedCategoryFilter ? 'No expenses in this category' : 'No expenses yet' }}</p>
+          <button v-if="!selectedCategoryFilter" @click="showAddForm = true" class="mt-3 text-xs text-violet-400 hover:text-violet-300 transition">+ Add your first expense</button>
         </div>
 
         <ExpenseRow
-          v-for="expense in expenses"
+          v-for="expense in filteredExpenses"
           :key="expense.id"
           :expense="expense"
           @deleted="onExpenseDeleted"

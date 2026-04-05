@@ -2,32 +2,32 @@
 definePageMeta({ layout: 'default', middleware: 'auth' })
 
 const { incomes, fetchIncome, createIncome, updateIncome, deleteIncome } = useIncome()
-const period = ref(new Date().toISOString().slice(0, 7))
+const { fromDate, toDate, setRange } = useDateRange()
 const label = ref('')
 const amount = ref('')
 const quickInput = ref('')
+const incomeDate = ref(new Date().toISOString().slice(0, 10))
 const mode = ref<'form' | 'quick'>('form')
 const loading = ref(false)
 const error = ref('')
 
-onMounted(() => fetchIncome(period.value))
-watch(period, () => fetchIncome(period.value))
+onMounted(() => fetchIncome(fromDate.value, toDate.value))
 
 const submit = async () => {
   error.value = ''
   loading.value = true
   try {
     if (mode.value === 'quick') {
-      await createIncome({ quick_input: quickInput.value, period: period.value })
+      await createIncome({ quick_input: quickInput.value, period: incomeDate.value })
       quickInput.value = ''
     } else {
       if (!label.value.trim()) { error.value = 'Label is required'; loading.value = false; return }
       if (!amount.value || isNaN(Number(amount.value))) { error.value = 'Valid amount is required'; loading.value = false; return }
-      await createIncome({ label: label.value.trim(), amount: parseFloat(amount.value), period: period.value })
+      await createIncome({ label: label.value.trim(), amount: parseFloat(amount.value), period: incomeDate.value })
       label.value = ''
       amount.value = ''
     }
-    await fetchIncome(period.value)
+    await fetchIncome(fromDate.value, toDate.value)
   } catch (e: any) {
     error.value = e?.data?.message ?? e?.data?.errors?.quick_input?.[0] ?? 'Failed to add income'
   } finally {
@@ -46,7 +46,7 @@ const submit = async () => {
           <p class="text-emerald-200 text-sm font-medium">Ad-hoc Income</p>
           <h1 class="text-2xl sm:text-3xl font-bold text-white mt-1 truncate">Income</h1>
         </div>
-        <PeriodNavigator v-model="period" dark />
+        <DateRangeFilter :from="fromDate" :to="toDate" dark @change="(f, t) => { setRange(f, t); fetchIncome(f, t) }" />
       </div>
     </div>
 
@@ -63,10 +63,14 @@ const submit = async () => {
         <form @submit.prevent="submit" class="p-5 space-y-3">
           <template v-if="mode==='form'">
             <input v-model="label" placeholder="Label (e.g. freelance, bonus)" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500" required />
-            <input v-model="amount" type="number" min="1" placeholder="Amount (Rp)" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500" required />
+            <div class="flex gap-2">
+              <input v-model="amount" type="number" min="1" placeholder="Amount (Rp)" class="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500" required />
+              <input v-model="incomeDate" type="date" class="bg-white/5 border border-white/10 rounded-xl px-3 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            </div>
           </template>
           <template v-else>
             <input v-model="quickInput" placeholder="income freelance : 500000" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            <input v-model="incomeDate" type="date" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500" />
             <p class="text-xs text-gray-500">Format: <code class="text-emerald-400">income label : amount</code></p>
           </template>
           <p v-if="error" class="text-red-400 text-xs bg-red-500/10 rounded-xl px-3 py-2">{{ error }}</p>
@@ -89,8 +93,8 @@ const submit = async () => {
           v-for="income in incomes"
           :key="income.id"
           :income="income"
-          @deleted="async (id) => { await deleteIncome(id); await fetchIncome(period) }"
-          @updated="async (id, data) => { await updateIncome(id, data); await fetchIncome(period) }"
+          @deleted="async (id) => { await deleteIncome(id); await fetchIncome(fromDate, toDate) }"
+          @updated="async (id, data) => { await updateIncome(id, data); await fetchIncome(fromDate, toDate) }"
         />
       </div>
       <div class="h-4"></div>

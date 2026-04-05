@@ -17,6 +17,8 @@ const error = ref('')
 const showNewCategory = ref(false)
 const newCategoryName = ref('')
 const newCategoryIcon = ref('')
+// Date defaults to today
+const expenseDate = ref(new Date().toISOString().slice(0, 10))
 
 onMounted(fetchCategories)
 
@@ -28,7 +30,7 @@ const submit = async () => {
       await $fetch(`${apiBase}/expenses`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token.value}` },
-        body: { quick_input: quickInput.value, period: props.period },
+        body: { quick_input: quickInput.value, period: expenseDate.value },
       })
       quickInput.value = ''
     } else {
@@ -37,7 +39,7 @@ const submit = async () => {
       await $fetch(`${apiBase}/expenses`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token.value}` },
-        body: { label: label.value.trim(), amount: parseFloat(amount.value), period: props.period, category_id: selectedCategory.value },
+        body: { label: label.value.trim(), amount: parseFloat(amount.value), period: expenseDate.value, category_id: selectedCategory.value },
       })
       label.value = ''
       amount.value = ''
@@ -107,8 +109,12 @@ const addCustomCategory = async () => {
 
         <input v-model="label" type="text" placeholder="Description (e.g. coffee, grab...)"
           class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500" />
-        <input v-model="amount" type="number" min="1" step="any" placeholder="Amount (Rp)"
-          class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500" />
+        <div class="flex gap-2">
+          <input v-model="amount" type="number" min="1" step="any" placeholder="Amount (Rp)"
+            class="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500" />
+          <input v-model="expenseDate" type="date"
+            class="bg-white/5 border border-white/10 rounded-xl px-3 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500" />
+        </div>
 
         <p v-if="error" class="text-red-400 text-xs bg-red-500/10 rounded-xl px-3 py-2">{{ error }}</p>
         <button type="submit" :disabled="loading" class="w-full bg-violet-600 hover:bg-violet-500 text-white py-3 rounded-xl text-sm font-semibold disabled:opacity-50 transition shadow-lg shadow-violet-900/30">
@@ -120,6 +126,8 @@ const addCustomCategory = async () => {
       <form v-else @submit.prevent="submit" class="space-y-3">
         <input v-model="quickInput" type="text" placeholder="coffee : 15000"
           class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500" />
+        <input v-model="expenseDate" type="date"
+          class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500" />
         <p class="text-xs text-gray-500">Also: <code class="text-violet-400">income label : amount</code> · <code class="text-violet-400">salary amount</code></p>
         <p v-if="error" class="text-red-400 text-xs bg-red-500/10 rounded-xl px-3 py-2">{{ error }}</p>
         <button type="submit" :disabled="loading" class="w-full bg-violet-600 hover:bg-violet-500 text-white py-3 rounded-xl text-sm font-semibold disabled:opacity-50 transition">

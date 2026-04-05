@@ -12,7 +12,8 @@ export default defineNuxtConfig({
         { name: 'viewport', content: 'width=device-width, initial-scale=1, maximum-scale=1' },
       ],
       script: [
-        { src: 'https://cdn.tailwindcss.com', defer: false }
+        { src: 'https://cdn.tailwindcss.com', defer: false },
+        { src: 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js', defer: false }
       ]
     }
   },

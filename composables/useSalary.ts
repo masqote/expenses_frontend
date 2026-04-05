@@ -7,15 +7,15 @@ export interface Salary {
 
 export const useSalary = () => {
   const { apiFetch } = useApi()
-  const salary = useState<Salary | null>('salary', () => null)
+  const salaries = useState<Salary[]>('salaries', () => [])
   const loading = ref(false)
   const error = ref<string | null>(null)
 
-  const fetchSalary = async (period: string) => {
+  const fetchSalaries = async () => {
     loading.value = true
     error.value = null
     try {
-      salary.value = await apiFetch<Salary | null>(`/salary?period=${period}`)
+      salaries.value = await apiFetch<Salary[]>('/salary')
     } catch (e: any) {
       error.value = e?.data?.message ?? 'Failed to fetch salary'
     } finally {
@@ -28,9 +28,14 @@ export const useSalary = () => {
       method: 'POST',
       body: JSON.stringify({ amount, period }),
     })
-    salary.value = result
+    await fetchSalaries()
     return result
   }
 
-  return { salary, loading, error, fetchSalary, setSalary }
+  const deleteSalary = async (period: string) => {
+    await apiFetch(`/salary/${period}`, { method: 'DELETE' })
+    salaries.value = salaries.value.filter(s => s.period !== period)
+  }
+
+  return { salaries, loading, error, fetchSalaries, setSalary, deleteSalary }
 }

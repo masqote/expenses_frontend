@@ -4,6 +4,7 @@ export interface GroupMemberSummary {
   salary: number | null
   total_income: number
   total_expenses: number
+  total_adjustments: number
   balance: number | null
 }
 
@@ -38,10 +39,10 @@ export const useGroup = () => {
   const loading = ref(false)
   const error = ref<string | null>(null)
 
-  const fetchGroupSummary = async (groupId: number, period: string) => {
+  const fetchGroupSummary = async (groupId: number, from: string, to: string) => {
     loading.value = true
     try {
-      groupSummary.value = await apiFetch<GroupSummary>(`/groups/${groupId}/summary?period=${period}`)
+      groupSummary.value = await apiFetch<GroupSummary>(`/groups/${groupId}/summary?from=${from}&to=${to}`)
     } catch (e: any) {
       error.value = e?.data?.message ?? 'Failed to fetch group summary'
     } finally {
@@ -49,10 +50,10 @@ export const useGroup = () => {
     }
   }
 
-  const fetchGroupExpenses = async (groupId: number, period: string) => {
+  const fetchGroupExpenses = async (groupId: number, from: string, to: string) => {
     loading.value = true
     try {
-      groupExpenses.value = await apiFetch<GroupExpense[]>(`/groups/${groupId}/expenses?period=${period}`)
+      groupExpenses.value = await apiFetch<GroupExpense[]>(`/groups/${groupId}/expenses?from=${from}&to=${to}`)
     } catch (e: any) {
       error.value = e?.data?.message ?? 'Failed to fetch group expenses'
     } finally {

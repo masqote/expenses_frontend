@@ -6,13 +6,13 @@ const groupId = Number(route.params.id)
 const { groupSummary, groupExpenses, fetchGroupSummary, fetchGroupExpenses, removeMember } = useGroup()
 const { token, user, fetchMe } = useAuth()
 const config = useRuntimeConfig()
-const period = ref(new Date().toISOString().slice(0, 7))
+const { fromDate, toDate, setRange } = useDateRange()
 
 const loadAll = async () => {
   try {
     await Promise.all([
-      fetchGroupSummary(groupId, period.value),
-      fetchGroupExpenses(groupId, period.value),
+      fetchGroupSummary(groupId, fromDate.value, toDate.value),
+      fetchGroupExpenses(groupId, fromDate.value, toDate.value),
     ])
   } catch (e: any) {
     if (e?.status === 403 || e?.response?.status === 403) {
@@ -20,8 +20,6 @@ const loadAll = async () => {
     }
   }
 }
-
-watch(period, loadAll)
 
 // Load the user's groups list to check access
 const myGroupsList = ref<{ id: number }[]>([])
@@ -43,9 +41,6 @@ onMounted(async () => {
   }
   await loadAll()
 })
-
-const memberExpenses = (userId: number) =>
-  groupExpenses.value.filter(e => e.user_id === userId) as any[]
 
 const fmt = (n: number | null | undefined) =>
   n == null ? '—' : `Rp ${Math.abs(n).toLocaleString('id-ID')}`
@@ -73,6 +68,11 @@ const handleRemoveMember = async (userId: number) => {
     removingMember.value = null
   }
 }
+
+// Filter expenses by date range (already handled server-side, but keep for local display)
+const memberExpenses = (userId: number) => {
+  return groupExpenses.value.filter(e => e.user_id === userId) as any[]
+}
 </script>
 
 <template>
@@ -89,7 +89,7 @@ const handleRemoveMember = async (userId: number) => {
           </p>
           <h1 class="text-2xl sm:text-3xl font-bold text-white mt-1 truncate">Group Dashboard</h1>
         </div>
-        <PeriodNavigator v-model="period" dark />
+        <DateRangeFilter :from="fromDate" :to="toDate" dark @change="(f, t) => { setRange(f, t); loadAll() }" />
       </div>
 
       <!-- Group balance + member count -->
@@ -162,18 +162,24 @@ const handleRemoveMember = async (userId: number) => {
           </div>
 
           <!-- Stats -->
-          <div class="grid grid-cols-3 gap-px bg-white/5">
-            <div class="bg-[#1a1825] px-4 py-3 text-center">
+          <div class="grid grid-cols-4 gap-px bg-white/5">
+            <div class="bg-[#1a1825] px-3 py-3 text-center">
               <p class="text-gray-500 text-xs mb-1">Salary</p>
               <p class="text-white text-sm font-semibold truncate">{{ fmt(member.salary) }}</p>
             </div>
-            <div class="bg-[#1a1825] px-4 py-3 text-center">
+            <div class="bg-[#1a1825] px-3 py-3 text-center">
               <p class="text-gray-500 text-xs mb-1">Income</p>
               <p class="text-emerald-400 text-sm font-semibold truncate">{{ fmt(member.total_income) }}</p>
             </div>
-            <div class="bg-[#1a1825] px-4 py-3 text-center">
+            <div class="bg-[#1a1825] px-3 py-3 text-center">
               <p class="text-gray-500 text-xs mb-1">Expenses</p>
               <p class="text-rose-400 text-sm font-semibold truncate">{{ fmt(member.total_expenses) }}</p>
+            </div>
+            <div class="bg-[#1a1825] px-3 py-3 text-center">
+              <p class="text-gray-500 text-xs mb-1">Adjust</p>
+              <p :class="(member.total_adjustments ?? 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'" class="text-sm font-semibold truncate">
+                {{ (member.total_adjustments ?? 0) >= 0 ? '+' : '-' }}{{ fmt(Math.abs(member.total_adjustments ?? 0)) }}
+              </p>
             </div>
           </div>
 
@@ -192,7 +198,7 @@ const handleRemoveMember = async (userId: number) => {
               </div>
               <div class="flex-1 min-w-0">
                 <p class="text-white text-sm truncate">{{ e.label }}</p>
-                <p class="text-gray-500 text-xs">{{ e.category?.name ?? 'Expense' }}</p>
+                <p class="text-gray-500 text-xs">{{ e.category?.name ?? 'Expense' }} · {{ new Date(e.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) }}</p>
               </div>
               <span class="text-rose-400 text-sm font-semibold shrink-0">
                 -Rp {{ parseFloat(e.amount).toLocaleString('id-ID') }}

@@ -15,11 +15,11 @@ export const useExpenses = () => {
   const loading = ref(false)
   const error = ref<string | null>(null)
 
-  const fetchExpenses = async (period: string) => {
+  const fetchExpenses = async (from: string, to: string) => {
     loading.value = true
     error.value = null
     try {
-      expenses.value = await apiFetch<Expense[]>(`/expenses?period=${period}`)
+      expenses.value = await apiFetch<Expense[]>(`/expenses?from=${from}&to=${to}`)
     } catch (e: any) {
       error.value = e?.data?.message ?? 'Failed to fetch expenses'
     } finally {

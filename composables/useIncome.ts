@@ -13,11 +13,11 @@ export const useIncome = () => {
   const loading = ref(false)
   const error = ref<string | null>(null)
 
-  const fetchIncome = async (period: string) => {
+  const fetchIncome = async (from: string, to: string) => {
     loading.value = true
     error.value = null
     try {
-      incomes.value = await apiFetch<Income[]>(`/income?period=${period}`)
+      incomes.value = await apiFetch<Income[]>(`/income?from=${from}&to=${to}`)
     } catch (e: any) {
       error.value = e?.data?.message ?? 'Failed to fetch income'
     } finally {

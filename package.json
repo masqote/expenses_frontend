@@ -1,0 +1,27 @@
+{
+  "name": "expense-tracker-frontend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "nuxt": "^3.13.0",
+    "vue": "^3.5.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0",
+    "@vitest/ui": "^2.1.0",
+    "fast-check": "^3.22.0",
+    "vitest": "^2.1.0",
+    "@vue/test-utils": "^2.4.0",
+    "typescript": "^5.5.0"
+  }
+}

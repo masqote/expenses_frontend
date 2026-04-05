@@ -1,2 +1,7 @@
 node_modules/
-vendor/
+.nuxt/
+.output/
+dist/
+.env
+test-results/
+playwright-report/

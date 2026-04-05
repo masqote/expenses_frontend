@@ -8,7 +8,7 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "deploy": "vercel --token vcp_48XioElqKFMwFWdCHf7R4EA4P3vNgfcJYeLrVgJDLR5mU8Y62z2jye3C --yes --prod --build-env NUXT_PUBLIC_API_BASE=https://expenses-production-09b3.up.railway.app/api",
+    "deploy": "vercel --yes --prod --build-env NUXT_PUBLIC_API_BASE=https://expenses-production-09b3.up.railway.app/api",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test"
